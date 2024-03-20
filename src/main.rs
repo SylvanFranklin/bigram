@@ -23,7 +23,9 @@ impl KeyboardSide {
 
         while let Some(c) = chars.next() {
             let next = chars.peek().unwrap_or(&'!');
-            if self.outer.contains(&c) && self.inner.contains(&next) || self.inner.contains(&c) && self.outer.contains(&next){
+            if self.outer.contains(&c) && self.inner.contains(&next)
+                || self.inner.contains(&c) && self.outer.contains(&next)
+            {
                 // I want to collect the rest of the word, but owntership is a problem
                 let next_copy = next.to_string();
                 chars.next();
