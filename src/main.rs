@@ -1,6 +1,24 @@
-use std::error::Error;
+use std::{error::Error, ops::Index};
 
 use colored::{ColoredString, Colorize};
+
+struct Bigram {
+    first: char,
+    second: char,
+}
+
+impl Bigram {
+    fn new(first: char, second: char) -> Bigram {
+        Bigram { first, second }
+    }
+
+    fn from_string(word: &str) -> Bigram {
+        let mut chars = word.chars();
+        let first = chars.next().unwrap();
+        let second = chars.next().unwrap();
+        Bigram { first, second }
+    }
+}
 
 struct KeyboardSide {
     outer: [char; 3],
@@ -8,10 +26,43 @@ struct KeyboardSide {
 }
 
 impl KeyboardSide {
+    // let colemak_right = KeyboardSide {
+    //     outer: ['j', 'm', 'k'],
+    //     inner: ['l', 'n', 'h'],
+    // };
+    // let colemak_left = KeyboardSide {
+    //     outer: ['b', 'g', 'v'],
+    //     inner: ['d', 't', 'p'],
+    // };
+    fn strength(&self, bigram: Bigram) -> i32 {
+        let mut strength = 0;
+        let outer_pos = self
+            .outer
+            .iter()
+            .position(|el| el == &bigram.first || el == &bigram.second)
+            .unwrap_or(99);
+        let inner_pos = self
+            .inner
+            .iter()
+            .position(|el| el == &bigram.second || el == &bigram.first)
+            .unwrap_or(99);
+
+        if inner_pos == outer_pos && inner_pos != 99 {
+            strength += 1;
+        }
+
+        strength
+    }
+
     fn print_bigrams(&self, words: &Vec<String>) {
         for ele in words.iter() {
+            let strength = self.strength(Bigram::from_string(ele));
+
+            if strength == 0 {
+                continue;
+            }
             match self.check_bigram(ele) {
-                Some(bigram) => println!("{}", bigram),
+                Some(bigram) => println!("{} {}", bigram, strength),
                 None => (),
             }
         }
@@ -51,12 +102,9 @@ impl KeyboardSide {
 }
 
 fn read_common_words() -> Result<Vec<String>, Box<dyn Error>> {
-    // Build the CSV reader and iterate over each record.
     let mut rdr = csv::Reader::from_path("common.csv")?;
     let mut words: Vec<String> = Vec::new();
     for result in rdr.records() {
-        // The iterator yields Result<StringRecord, Error>, so we check the
-        // error here.
         let record = result?;
 
         match record.get(0) {
